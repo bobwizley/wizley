@@ -1,0 +1,42 @@
+name: build-and-deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: registry.codelab.tec.br
+  IMAGE: registry.codelab.tec.br/vctrtvfrrr/wizley
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    container:
+      image: catthehacker/ubuntu:act-latest
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /opt/compose:/opt/compose
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Registry login
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login "${REGISTRY}" -u "${{ github.actor }}" --password-stdin
+
+      - name: Build image
+        run: |
+          docker build \
+            -t "${IMAGE}:${{ github.sha }}" \
+            -t "${IMAGE}:latest" \
+            .
+
+      - name: Push image
+        run: |
+          docker push "${IMAGE}:${{ github.sha }}"
+          docker push "${IMAGE}:latest"
+
+      - name: Deploy
+        run: |
+          docker compose -f /opt/compose/wizley/compose.yml pull
+          docker compose -f /opt/compose/wizley/compose.yml up -d --force-recreate
+          docker image prune -f --filter "label=org.opencontainers.image.source"
