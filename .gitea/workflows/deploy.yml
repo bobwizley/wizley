@@ -35,8 +35,7 @@ jobs:
           docker push "${IMAGE}:${{ github.sha }}"
           docker push "${IMAGE}:latest"
 
-      - name: Deploy
-        run: |
-          docker compose -f /opt/compose/wizley/compose.yml pull
-          docker compose -f /opt/compose/wizley/compose.yml up -d --force-recreate
-          docker image prune -f --filter "label=org.opencontainers.image.source"
+      - name: Deploy stack
+        uses: https://git.codelab.tec.br/codelab/deploy-stack@master
+        with:
+          service: wizley

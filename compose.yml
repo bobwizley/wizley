@@ -1,0 +1,27 @@
+services:
+  wizley:
+    image: registry.codelab.tec.br/vctrtvfrrr/wizley:latest
+    container_name: wizley
+    restart: unless-stopped
+    pull_policy: always
+    networks:
+      - traefik-public
+    mem_limit: 32m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.wizley.rule=Host(`wizley.com.br`) || Host(`www.wizley.com.br`)"
+      - "traefik.http.routers.wizley.entrypoints=websecure"
+      - "traefik.http.routers.wizley.tls=true"
+      - "traefik.http.routers.wizley.tls.certresolver=cloudflare"
+      - "traefik.http.routers.wizley.tls.domains[0].main=wizley.com.br"
+      - "traefik.http.routers.wizley.tls.domains[0].sans=www.wizley.com.br"
+      - "traefik.http.routers.wizley.middlewares=wizley-www-redirect@docker,security-headers@file"
+      - "traefik.http.services.wizley.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.wizley-www-redirect.redirectregex.regex=^https?://www\\.wizley\\.com\\.br/(.*)"
+      - "traefik.http.middlewares.wizley-www-redirect.redirectregex.replacement=https://wizley.com.br/$${1}"
+      - "traefik.http.middlewares.wizley-www-redirect.redirectregex.permanent=true"
+
+networks:
+  traefik-public:
+    external: true
